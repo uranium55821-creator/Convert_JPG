@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AVIF to JPG Converter</title>
 
-    <!-- Manifest added -->
+    <!-- Manifest Link Added -->
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -23,11 +24,9 @@
         }
     </style>
 </head>
-
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
     <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden">
-        
         <!-- Header -->
         <div class="bg-blue-600 p-6 text-white text-center">
             <h1 class="text-3xl font-bold mb-2">AVIF to JPG Converter</h1>
@@ -35,11 +34,11 @@
         </div>
 
         <div class="p-8 space-y-6">
-
+            
             <!-- Drop Zone -->
             <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center transition-all duration-300 cursor-pointer hover:border-blue-400 group relative">
                 <input type="file" id="fileInput" accept="image/avif" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-
+                
                 <div class="flex flex-col items-center justify-center space-y-4 pointer-events-none">
                     <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
                         <i data-lucide="upload-cloud" class="w-8 h-8"></i>
@@ -51,11 +50,11 @@
                 </div>
             </div>
 
-            <!-- Preview Section -->
+            <!-- Preview Section (Hidden by default) -->
             <div id="previewSection" class="hidden">
                 <div class="flex flex-col md:flex-row gap-6 items-center justify-center bg-gray-50 p-4 rounded-lg">
                     
-                    <!-- Original -->
+                    <!-- Original Info -->
                     <div class="flex flex-col items-center w-full md:w-1/2">
                         <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Original AVIF</span>
                         <div class="relative w-full h-48 bg-gray-200 rounded-lg overflow-hidden flex items-center justify-center border border-gray-300">
@@ -64,13 +63,13 @@
                         <p id="fileName" class="text-sm text-gray-600 mt-2 truncate max-w-full font-medium"></p>
                     </div>
 
-                    <!-- Arrow -->
+                    <!-- Arrow Icon -->
                     <div class="text-gray-400">
                         <i data-lucide="arrow-right" class="w-8 h-8 hidden md:block"></i>
                         <i data-lucide="arrow-down" class="w-8 h-8 md:hidden"></i>
                     </div>
 
-                    <!-- Output -->
+                    <!-- Output Info -->
                     <div class="flex flex-col items-center w-full md:w-1/2">
                         <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Ready to Convert</span>
                         <div class="relative w-full h-48 bg-white rounded-lg overflow-hidden flex items-center justify-center border border-dashed border-gray-300">
@@ -82,7 +81,7 @@
                 </div>
             </div>
 
-            <!-- Buttons -->
+            <!-- Actions -->
             <div class="flex flex-col sm:flex-row gap-4 pt-2">
                 <button id="convertBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hidden flex items-center justify-center gap-2">
                     <i data-lucide="refresh-cw" class="w-5 h-5"></i>
@@ -95,141 +94,158 @@
                 </a>
             </div>
 
-            <!-- Error -->
+            <!-- Error Message -->
             <div id="errorMessage" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center border border-red-100"></div>
 
         </div>
     </div>
 
-    <!-- Canvas -->
+    <!-- Hidden Canvas for Processing -->
     <canvas id="canvas" class="hidden"></canvas>
 
     <script>
-    lucide.createIcons();
+        // Initialize Icons
+        lucide.createIcons();
 
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const previewSection = document.getElementById('previewSection');
-    const sourceImage = document.getElementById('sourceImage');
-    const outputImage = document.getElementById('outputImage');
-    const placeholderOutput = document.getElementById('placeholderOutput');
-    const fileNameDisplay = document.getElementById('fileName');
-    const convertBtn = document.getElementById('convertBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const statusText = document.getElementById('statusText');
-    const errorMessage = document.getElementById('errorMessage');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+        // Elements
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewSection = document.getElementById('previewSection');
+        const sourceImage = document.getElementById('sourceImage');
+        const outputImage = document.getElementById('outputImage');
+        const placeholderOutput = document.getElementById('placeholderOutput');
+        const fileNameDisplay = document.getElementById('fileName');
+        const convertBtn = document.getElementById('convertBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const statusText = document.getElementById('statusText');
+        const errorMessage = document.getElementById('errorMessage');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
 
-    let currentFile = null;
+        let currentFile = null;
 
-    ['dragenter','dragover','dragleave','drop'].forEach(e => {
-        dropZone.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation(); }, false);
-    });
+        // Drag and Drop Effects
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
 
-    ['dragenter','dragover'].forEach(e => {
-        dropZone.addEventListener(e, () => dropZone.classList.add('drop-active'), false);
-    });
-
-    ['dragleave','drop'].forEach(e => {
-        dropZone.addEventListener(e, () => dropZone.classList.remove('drop-active'), false);
-    });
-
-    dropZone.addEventListener('drop', handleDrop);
-    fileInput.addEventListener('change', handleFiles);
-
-    function handleDrop(e) {
-        handleFiles({ target: { files: e.dataTransfer.files } });
-    }
-
-    function handleFiles(e) {
-        const file = e.target.files[0];
-        resetUI();
-
-        if (!file) return;
-
-        if (file.type !== 'image/avif' && !file.name.toLowerCase().endsWith('.avif')) {
-            showError("Please upload a valid .avif file.");
-            return;
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
         }
 
-        currentFile = file;
-        fileNameDisplay.textContent = file.name;
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('drop-active'), false);
+        });
 
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            sourceImage.src = evt.target.result;
-            previewSection.classList.remove('hidden');
-            convertBtn.classList.remove('hidden');
-            convertBtn.disabled = false;
-        };
-        reader.readAsDataURL(file);
-    }
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('drop-active'), false);
+        });
 
-    convertBtn.addEventListener('click', () => {
-        if (!sourceImage.src) return;
+        dropZone.addEventListener('drop', handleDrop, false);
+        fileInput.addEventListener('change', handleFiles, false);
 
-        convertBtn.disabled = true;
-        convertBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Converting...';
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles({ target: { files: files } });
+        }
 
-        setTimeout(() => {
-            try {
-                canvas.width = sourceImage.naturalWidth;
-                canvas.height = sourceImage.naturalHeight;
-                ctx.drawImage(sourceImage, 0, 0);
+        function handleFiles(e) {
+            const file = e.target.files[0];
+            
+            // Reset UI
+            resetUI();
 
-                const jpgUrl = canvas.toDataURL('image/jpeg', 1.0);
-                outputImage.src = jpgUrl;
-                outputImage.classList.remove('hidden');
-                placeholderOutput.classList.add('hidden');
+            if (!file) return;
 
-                const newFileName = currentFile.name.replace(/\.[^/.]+$/, "") + ".jpg";
-                downloadBtn.href = jpgUrl;
-                downloadBtn.download = newFileName;
-                downloadBtn.classList.remove('hidden');
-
-                statusText.textContent = "Converted successfully!";
-                statusText.classList.add("text-green-600");
-                statusText.classList.remove("text-gray-400");
-
-                convertBtn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i> Done';
-            } catch (err) {
-                showError("Conversion failed. Browser may not support AVIF.");
-                convertBtn.disabled = false;
-                convertBtn.innerHTML = '<i data-lucide="refresh-cw" class="w-5 h-5"></i> Try Again';
+            // Validate file type (basic check)
+            if (file.type !== 'image/avif' && !file.name.toLowerCase().endsWith('.avif')) {
+                showError("Please upload a valid .avif file.");
+                return;
             }
 
+            currentFile = file;
+            fileNameDisplay.textContent = file.name;
+
+            // Load Preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                sourceImage.src = e.target.result;
+                previewSection.classList.remove('hidden');
+                convertBtn.classList.remove('hidden');
+                convertBtn.disabled = false;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        convertBtn.addEventListener('click', () => {
+            if (!sourceImage.src) return;
+
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Converting...';
+
+            // Use a slight timeout to allow UI to update to "Converting..." state
+            setTimeout(() => {
+                try {
+                    // Set canvas size to match original image
+                    canvas.width = sourceImage.naturalWidth;
+                    canvas.height = sourceImage.naturalHeight;
+
+                    // Draw image onto canvas
+                    // Note: Browser needs to support AVIF natively for this to work
+                    ctx.drawImage(sourceImage, 0, 0);
+
+                    // Export to JPG with maximum quality (1.0)
+                    const jpgUrl = canvas.toDataURL('image/jpeg', 1.0);
+
+                    // Update UI with result
+                    outputImage.src = jpgUrl;
+                    outputImage.classList.remove('hidden');
+                    placeholderOutput.classList.add('hidden');
+                    
+                    // Setup Download Link
+                    const newFileName = currentFile.name.replace(/\.[^/.]+$/, "") + ".jpg";
+                    downloadBtn.href = jpgUrl;
+                    downloadBtn.download = newFileName;
+                    downloadBtn.classList.remove('hidden');
+                    
+                    // Update Status
+                    statusText.textContent = "Converted successfully!";
+                    statusText.classList.add("text-green-600");
+                    statusText.classList.remove("text-gray-400");
+
+                    convertBtn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i> Done';
+                } catch (err) {
+                    console.error(err);
+                    showError("An error occurred during conversion. Your browser might not support AVIF decoding.");
+                    convertBtn.innerHTML = '<i data-lucide="refresh-cw" class="w-5 h-5"></i> Try Again';
+                    convertBtn.disabled = false;
+                }
+                
+                lucide.createIcons(); // Refresh icons for the button
+            }, 100);
+        });
+
+        function resetUI() {
+            errorMessage.classList.add('hidden');
+            previewSection.classList.add('hidden');
+            downloadBtn.classList.add('hidden');
+            convertBtn.classList.add('hidden');
+            outputImage.classList.add('hidden');
+            placeholderOutput.classList.remove('hidden');
+            statusText.textContent = "Waiting...";
+            statusText.classList.remove("text-green-600");
+            statusText.classList.add("text-gray-400");
+            
+            convertBtn.innerHTML = '<i data-lucide="refresh-cw" class="w-5 h-5"></i> Convert to JPG';
             lucide.createIcons();
-        }, 100);
-    });
+        }
 
-    function resetUI() {
-        errorMessage.classList.add('hidden');
-        previewSection.classList.add('hidden');
-        downloadBtn.classList.add('hidden');
-        convertBtn.classList.add('hidden');
-        outputImage.classList.add('hidden');
-        placeholderOutput.classList.remove('hidden');
-        statusText.textContent = "Waiting...";
-        statusText.classList.remove("text-green-600");
-        statusText.classList.add("text-gray-400");
-        convertBtn.innerHTML = '<i data-lucide="refresh-cw" class="w-5 h-5"></i> Convert to JPG';
-        lucide.createIcons();
-    }
-
-    function showError(msg) {
-        errorMessage.textContent = msg;
-        errorMessage.classList.remove('hidden');
-    }
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorMessage.classList.remove('hidden');
+        }
     </script>
-
-    <!-- ⭐ SERVICE WORKER REGISTRATION ADDED BELOW ⭐ -->
-    <script>
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js')
-            .catch(err => console.error("SW failed:", err));
-    }
-    </script>
-
 </body>
 </html>
